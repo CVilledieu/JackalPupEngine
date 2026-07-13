@@ -2,8 +2,6 @@
 //! Things that are set when the entity is created, but are infrequently updated.
 //! AOS approach
 
-const EntityTypes = @import("util").EntityTypes;
-
 const Tags = struct {
     const Self = @This();
 

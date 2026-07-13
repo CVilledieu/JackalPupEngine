@@ -2,10 +2,11 @@
 //! Things that are elements that are frequently updated
 //! SOA approach
 
-const EntityTypes = @import("util").EntityTypes;
-const Vec2 = EntityTypes.Vec2f;
-const Vec3 = EntityTypes.Vec3f;
-const Vec4 = EntityTypes.Vec4f;
+const Types = @import("util");
+
+const Vec2 = Types.Vec2f;
+const Vec3 = Types.Vec3f;
+const Vec4 = Types.Vec4f;
 
 pub const Physics = struct {
     const Self = @This();
@@ -13,6 +14,8 @@ pub const Physics = struct {
     pos: []Vec3,
     scale: []Vec3,
     rotation: []Vec4,
+
+    velocity: []Vec3,
 
     pub fn init() Self {
         return .{};
@@ -29,6 +32,10 @@ pub const Physics = struct {
 
     //Called during engine update phase
     pub fn Update(self: *Self) void {
-        for (self.pos, self.rotation, self.scale) |p, r, s| {}
+
+        //Update position based on velocity
+        for (self.pos, self.velocity) |p, v| {
+            p += v;
+        }
     }
 };

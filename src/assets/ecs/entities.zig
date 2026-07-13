@@ -1,12 +1,12 @@
 //! Main entry point for the Entity component system
 //! Called by Scene
 
-const EntityTypes = @import("util").EntityTypes;
+const Types = @import("util");
 const Attributes = @import("attributes.zig");
 const Physics = @import("physics.zig");
 
-const Vec3 = EntityTypes.Vec3f;
-const Vec4 = EntityTypes.Vec4f;
+const Vec3 = Types.Vec3f;
+const Vec4 = Types.Vec4f;
 
 const EntityDesc = struct {
     //Local space

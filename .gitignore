@@ -1,2 +1,5 @@
 # Zig build system
-.zig-cache
+.zig-cache/
+
+#internal
+private/
