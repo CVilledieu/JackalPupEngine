@@ -1,39 +1,110 @@
-//! Main entry point for the Entity component system
-//! Called by Scene
+//!
 
-const Types = @import("util");
-const Attributes = @import("attributes.zig");
-const Physics = @import("physics.zig");
+const std = @import("std");
 
-const Vec3 = Types.Vec3f;
-const Vec4 = Types.Vec4f;
+pub const EntityId = u32;
 
-const EntityDesc = struct {
-    //Local space
-    pos: Vec3,
-    scale: Vec3,
-    rot: Vec4,
+pub const Entities = struct {
+    const Self = @This();
+    pub const invalid_index = std.math.maxInt(u32);
+    pub const InitError = error{ MismatchedCapacity, CapacityTooLarge };
+    pub const SpawnError = error{OutOfIds};
+    pub const RemoveError = error{InvalidEntity};
 
-    //Attributes
-    mesh: u32,
-};
+    active: []EntityId,
+    free: []EntityId,
+    active_index_by_id: []u32,
 
-const ECS = struct {
-    physical: Physics,
-    attributes: Attributes,
-    entityCount: u32,
-    pub fn init() @This() {
+    active_len: u32,
+    free_len: u32,
+
+    pub fn init(active: []EntityId, free: []EntityId, active_index_by_id: []u32) InitError!Self {
+        if (active.len != free.len or active.len != active_index_by_id.len) {
+            return InitError.MismatchedCapacity;
+        }
+        if (active.len > std.math.maxInt(u32)) {
+            return InitError.CapacityTooLarge;
+        }
+
+        const cap: u32 = @intCast(active.len);
+
+        // Initialize all ids as free and none as active.
+        var i: u32 = 0;
+        while (i < cap) : (i += 1) {
+            free[i] = cap - 1 - i;
+            active_index_by_id[i] = invalid_index;
+        }
+
         return .{
-            .localSpace = Physics.init(),
-            .attr = Attributes.init(),
-            .entityCount = 0,
+            .active = active,
+            .free = free,
+            .active_index_by_id = active_index_by_id,
+            .active_len = 0,
+            .free_len = cap,
         };
     }
-};
 
-pub fn RegisterEntities(newEntities: *EntityDesc) !void {
-    for (newEntities) |entity| {
-        .localSpace.Push(.entityCount, entity.pos, entity.scale, entity.rot);
-        .attr.Push(.entityCount, entity.visibility, entity.active);
+    pub fn capacity(self: *const Self) u32 {
+        return @intCast(self.active.len);
     }
-}
+
+    pub fn count(self: *const Self) u32 {
+        return self.active_len;
+    }
+
+    pub fn activeIds(self: *const Self) []const EntityId {
+        return self.active[0..@intCast(self.active_len)];
+    }
+
+    pub fn spawn(self: *Self) SpawnError!EntityId {
+        if (self.free_len == 0) {
+            return SpawnError.OutOfIds;
+        }
+
+        self.free_len -= 1;
+        const id = self.free[@intCast(self.free_len)];
+
+        const active_idx = self.active_len;
+        self.active[@intCast(active_idx)] = id;
+        self.active_index_by_id[@intCast(id)] = active_idx;
+        self.active_len += 1;
+
+        return id;
+    }
+
+    pub fn remove(self: *Self, id: EntityId) RemoveError!void {
+        if (!self.isActive(id)) {
+            return RemoveError.InvalidEntity;
+        }
+
+        const remove_idx = self.active_index_by_id[@intCast(id)];
+        const last_active_idx = self.active_len - 1;
+        const last_id = self.active[@intCast(last_active_idx)];
+
+        // Swap-remove from active ids.
+        self.active[@intCast(remove_idx)] = last_id;
+        self.active_index_by_id[@intCast(last_id)] = remove_idx;
+
+        self.active_len -= 1;
+        self.active_index_by_id[@intCast(id)] = invalid_index;
+
+        // Push removed id back to free stack.
+        self.free[@intCast(self.free_len)] = id;
+        self.free_len += 1;
+    }
+
+    pub fn isActive(self: *const Self, id: EntityId) bool {
+        const cap = self.capacity();
+        if (id >= cap) {
+            return false;
+        }
+
+        const idx = self.active_index_by_id[@intCast(id)];
+        if (idx == invalid_index or idx >= self.active_len) {
+            return false;
+        }
+
+        // Corruption guard: index map and active array should agree.
+        return self.active[@intCast(idx)] == id;
+    }
+};

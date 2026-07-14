@@ -6,7 +6,6 @@ const Tags = struct {
     const Self = @This();
 
     visibility: u8,
-    active: u8,
     mesh: u32,
     material: u32,
     assetID: u32, //Non runtime ID Specific to the related entity
@@ -23,10 +22,5 @@ pub const Attributes = struct {
 
     pub fn init() Self {
         return .{};
-    }
-
-    pub fn Push(self: *Self, id: u32, visibility: u8, active: u8) void {
-        self.tags[id].active = active;
-        self.tags[id].visibility = visibility;
     }
 };
