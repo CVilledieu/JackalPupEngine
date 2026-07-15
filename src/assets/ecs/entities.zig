@@ -11,9 +11,10 @@ pub const Entities = struct {
     pub const SpawnError = error{OutOfIds};
     pub const RemoveError = error{InvalidEntity};
 
-    active: []EntityId,
-    free: []EntityId,
-    active_index_by_id: []u32,
+    free: []EntityId, // Which Entity indexes aren't registered to an entity
+
+    active: []EntityId, //Actively registered entities that are being rendered
+    active_index_by_id: []u32, //The index of the registered entity within active list
 
     active_len: u32,
     free_len: u32,
@@ -70,6 +71,20 @@ pub const Entities = struct {
         self.active_len += 1;
 
         return id;
+    }
+
+    pub fn spawnMulti(self: *Self, spawnBuffer: []EntityId, spawnCount: u32) SpawnError!u32 {
+        if (self.free_len < spawnCount) {
+            return SpawnError.OutOfIds;
+        }
+        const n = @min(spawnBuffer.len, spawnCount);
+        spawnBuffer[0..n].* = self.free[@intCast(self.free_len - n)..@intCast(self.free_len)];
+        self.free_len -= spawnCount;
+        self.active[@intCast()]
+
+        self.active_len += n;
+
+        return n;
     }
 
     pub fn remove(self: *Self, id: EntityId) RemoveError!void {

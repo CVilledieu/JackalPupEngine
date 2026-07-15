@@ -2,13 +2,23 @@
 //! Things that are set when the entity is created, but are infrequently updated.
 //! AOS approach
 
+// Imports
+const Types = @import("ecs_config.zig");
+
+// Unpacking / aliasing imported types
+const EntityID = Types.EntityID;
+const AssetID = Types.AssetID;
+const RenderID = Types.RenderID;
+
 const Tags = struct {
     const Self = @This();
 
     visibility: u8,
     mesh: u32,
     material: u32,
-    assetID: u32, //Non runtime ID Specific to the related entity
+
+    assetID: AssetID, //Non runtime ID Specific to the related entity
+    renderID: RenderID,
 
     pub fn init(visible: u8, active: u8) Self {
         return .{ .visibility = visible, .active = active };
