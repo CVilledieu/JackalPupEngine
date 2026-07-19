@@ -1,35 +1,33 @@
-//! Tracking Entity IDs
-//! To be used by the ECS for tracking open
+//! Main entry point for the Entity component system
+//! Called by Scene
+//!
+//!
 
-//Imports
+// Imports
 const std = @import("std");
-
-const Attributes = @import("attributes.zig");
-const Physics = @import("physics.zig");
-const EntityTypes = @import("ecs_config.zig");
+const Types = @import("config").ECS;
+const EntityAllocator = @import("entity_alloc.zig").EntityAllocator;
+const Physics = @import("physics.zig").Physics;
+const Attributes = @import("attributes.zig").Attributes;
 
 // Unpacking / aliasing imported types
-const EntityID = EntityTypes.EntityID;
-const RenderID = EntityTypes.RenderID;
-const Mat4 = EntityTypes.Mat4;
-const Allocator = std.mem.Allocator;
+const Vec3 = Types.Vec3f;
+const Vec4 = Types.Vec4f;
 
 pub const Entities = struct {
     const Self = @This();
-    RenderData: []Mat4,
-    RenderIDs: []EntityID, //EntityID relative to the render data
-    RIDsByEntity: []EntityID, //RenderID relative to the EntityID
 
-    freeIDs: []EntityID,
-    count: u32,
+    entityIds: EntityAllocator,
+    physics: Physics,
+    attributes: Attributes,
 
-    pub fn init(allocator: Allocator, listSize: u32) !Self {
-        const freeIDs: []EntityID = try allocator.alloc(EntityID, listSize);
-        const RIDsByEntity: []EntityID = try allocator.alloc(EntityID, listSize);
-
-        for (freeIDs, 0..listSize) |*entity, i| {
-            entity.* = @intCast(i);
-        }
-        return .{ .count = 0, .freeIDs = freeIDs, .RIDsByEntity = RIDsByEntity };
+    pub fn init(allocator: std.mem.Allocator) Self {
+        return .{
+            .entityIds = Entities.init(),
+            .physics = Physics.init(),
+            .attributes = Attributes.init(),
+        };
     }
+
+    pub fn SpawnEntities(self: *Self, desc: *EntityDesc) void {}
 };

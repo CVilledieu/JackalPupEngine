@@ -2,13 +2,13 @@
 //! Things that are elements that are frequently updated
 //! SOA approach
 
-const Types = @import("util");
+const Types = @import("config").ECS;
 
 const Vec2 = Types.Vec2f;
 const Vec3 = Types.Vec3f;
 const Vec4 = Types.Vec4f;
 
-pub const Physical = struct {
+pub const Physics = struct {
     const Self = @This();
 
     pos: []Vec3,
