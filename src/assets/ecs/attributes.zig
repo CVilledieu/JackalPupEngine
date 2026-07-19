@@ -18,10 +18,9 @@ const Tags = struct {
     material: u32,
 
     assetID: AssetID, //Non runtime ID Specific to the related entity
-    renderID: RenderID,
 
-    pub fn init(visible: u8, active: u8) Self {
-        return .{ .visibility = visible, .active = active };
+    pub fn init(visible: u8, assetID: AssetID) Self {
+        return .{ .visibility = visible, .assetID = assetID };
     }
 };
 

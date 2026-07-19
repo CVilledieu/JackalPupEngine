@@ -4,6 +4,7 @@
 //!
 
 // Imports
+const std = @import("std");
 const Types = @import("ecs_config.zig");
 const Entities = @import("entities.zig");
 const Physics = @import("physics.zig");
@@ -21,7 +22,7 @@ pub const ECS = struct {
     physics: Physics,
     attributes: Attributes,
 
-    pub fn init() Self {
+    pub fn init(allocator: std.mem.Allocator) Self {
         return .{
             .entityIds = Entities.init(),
             .physics = Physics.init(),
