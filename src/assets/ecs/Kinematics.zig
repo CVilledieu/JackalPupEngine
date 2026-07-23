@@ -1,5 +1,6 @@
-// Imports
+//! Components that are hot or warm
 
+// Imports
 const Types = @import("config").ECS;
 
 // Unpacking / aliasing imported types

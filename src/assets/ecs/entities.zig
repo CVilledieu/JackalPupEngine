@@ -8,34 +8,20 @@
 const std = @import("std");
 const Types = @import("config").ECS;
 
-const Attributes = @import("attributes.zig").Attributes;
-const Kinematics = @import("Kinematics.zig");
+//Import component containers
+const Attributes = @import("attributes.zig");
+const Kinematics = @import("kinematics.zig");
 
 // Unpacking / aliasing imported types
 const EntityID = Types.EntityID;
-const Motion = Kinematics.Motion;
-const Transform = Kinematics.Transform;
-
 const Mat4 = Types.Mat4;
 
-// Pool of free entity indexes(ids)
-const Registry = struct {
-    const Self = @This();
-    freeEntities: []EntityID,
-    count: u32,
+//Unpack components
+const Tags = Attributes.Tags;
+const Registry = Attributes.Registry;
 
-    pub fn init(allocator: std.mem.Allocator, capacity: u32) !Self {
-        return .{
-            .freeEntities = try allocator.alloc(EntityID, capacity),
-            .count = 0,
-        };
-    }
-
-    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        allocator.free(self.freeEntities);
-        self.* = undefined;
-    }
-};
+const Motion = Kinematics.Motion;
+const Transform = Kinematics.Transform;
 
 //Dense arrays prepared to be sent to renderer
 const RenderObject = struct {
@@ -50,7 +36,7 @@ pub const Entities = struct {
     malloc: std.mem.Allocator,
 
     registry: Registry,
-    renderObjects: std.MultiArrayList(RenderObjects) = .{},
+    renderObjects: std.MultiArrayList(RenderObject) = .{},
 
     //Physics
     motion: std.MultiArrayList(Motion) = .{},

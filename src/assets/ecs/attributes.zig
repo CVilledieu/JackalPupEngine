@@ -7,42 +7,53 @@ const std = @import("std");
 const Types = @import("ecs_config.zig");
 
 // Unpacking / aliasing imported types
-const EntityID = Types.EntityID;
 const AssetID = Types.AssetID;
+const EntityID = Types.EntityID;
 
-pub const Tags = struct {
-    visibility: u8,
+//Tags used by render object
+pub const ObjectDetails = struct {
     mesh: u32,
     material: u32,
+    objectID: u32,
+};
 
+//Coldest tags. If no other tags are needed will refactor to include assetID into objectTags
+pub const OptionalDetails = struct {
     assetID: AssetID, //Non runtime ID Specific to the related entity
 };
 
-pub const Attributes = struct {
+pub const Tags = struct {
     const Self = @This();
 
     // AOS: a single dense array of whole Tags structs.
-    tags: std.ArrayList(Tags) = .empty,
+    objDetails: std.ArrayList(ObjectDetails) = .empty,
 
     /// Reserve backing storage up front. The allocator is injected by the
     /// owning `Entities` container rather than owned here.
     pub fn ensureTotalCapacity(self: *Self, allocator: std.mem.Allocator, capacity: usize) !void {
-        try self.tags.ensureTotalCapacity(allocator, capacity);
+        try self.objDetails.ensureTotalCapacity(allocator, capacity);
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        self.tags.deinit(allocator);
+        self.objDetails.deinit(allocator);
     }
 };
 
-pub const Tags = struct {
-    assetID: u32, //Static pre comptime id
-    roID: u32, //Render Object ID
-};
+// Pool of free entity indexes(ids)
+pub const Registry = struct {
+    const Self = @This();
+    freeEntities: []EntityID,
+    count: u32,
 
-pub const Model = struct {
-    mesh: u32,
-    material: u32,
-    assetID: u32,
-    roID: u32,
+    pub fn init(allocator: std.mem.Allocator, capacity: u32) !Self {
+        return .{
+            .freeEntities = try allocator.alloc(EntityID, capacity),
+            .count = 0,
+        };
+    }
+
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        allocator.free(self.freeEntities);
+        self.* = undefined;
+    }
 };
