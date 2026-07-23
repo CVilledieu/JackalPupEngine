@@ -38,9 +38,9 @@ const Registry = struct {
 };
 
 //Dense arrays prepared to be sent to renderer
-const RenderObjects = struct {
+const RenderObject = struct {
     transforms: Mat4,
-    ids: EntityID,
+    entity: EntityID,
 };
 
 //Core struct
@@ -50,9 +50,9 @@ pub const Entities = struct {
     malloc: std.mem.Allocator,
 
     registry: Registry,
-    attributes: Attributes = .{},
-
     renderObjects: std.MultiArrayList(RenderObjects) = .{},
+
+    //Physics
     motion: std.MultiArrayList(Motion) = .{},
     transforms: std.MultiArrayList(Transform) = .{},
 

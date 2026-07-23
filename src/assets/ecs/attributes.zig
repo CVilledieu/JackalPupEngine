@@ -35,20 +35,14 @@ pub const Attributes = struct {
     }
 };
 
-pub const Attributes2 = struct {
-    mesh: u32,
-    material: u32,
-
-    assetID: u32,
-    roID: u32,
-};
-
 pub const Tags = struct {
     assetID: u32, //Static pre comptime id
     roID: u32, //Render Object ID
 };
 
-pub const Models = struct {
-    meshID: u32,
-    materialID: u32,
+pub const Model = struct {
+    mesh: u32,
+    material: u32,
+    assetID: u32,
+    roID: u32,
 };
