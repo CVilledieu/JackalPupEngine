@@ -14,9 +14,7 @@ const Kinematics = @import("kinematics.zig");
 
 // Unpacking / aliasing imported types
 const EntityID = Types.EntityID;
-const RenderObject = Types.RenderObject;
-const Transforms = Kinematics.Transforms;
-const Motion = Kinematics.Motion;
+const RenderObject: type = Types.RenderObject;
 
 var malloc: std.mem.Allocator = .{};
 
@@ -26,10 +24,6 @@ var entityCount: u32 = 0;
 
 //Rendering formatted entities
 var renderObjects: std.MultiArrayList(RenderObject) = .{};
-
-//Components
-var physics: std.MultiArrayList(Kinematics) = .{};
-var attributes: std.MultiArrayList(Attributes) = .{};
 
 pub fn init(allocator: std.mem.Allocator, capacity: u32) !void {
     malloc = allocator;
