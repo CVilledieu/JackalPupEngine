@@ -1,59 +1,31 @@
 //! Contains or handles the less dynamic entity data.
 //! Things that dont interact with the physics system
 
+//External Imports
 const std = @import("std");
 
-// Imports
-const Types = @import("ecs_config.zig");
+//Internal Imports
+const Types = @import("config").ECS;
 
-// Unpacking / aliasing imported types
+// Unpack / Alias imported types
 const AssetID = Types.AssetID;
-const EntityID = Types.EntityID;
-
-//Tags used by render object
-pub const ObjectDetails = struct {
+const Self = @This();
+// Data related to rendering
+pub const ObjectTags = struct {
     mesh: u32,
     material: u32,
-    objectID: u32,
+    id: u32,
 };
 
-//Coldest tags. If no other tags are needed will refactor to include assetID into objectTags
-pub const OptionalDetails = struct {
-    assetID: AssetID, //Non runtime ID Specific to the related entity
+// Static pre runtime time data
+pub const AssetTags = struct {
+    id: AssetID,
 };
 
-pub const Tags = struct {
-    const Self = @This();
+objectTags: std.ArrayList(ObjectTags) = .empty,
+assetTags: std.ArrayList(AssetTags) = .empty,
 
-    // AOS: a single dense array of whole Tags structs.
-    objDetails: std.ArrayList(ObjectDetails) = .empty,
-
-    /// Reserve backing storage up front. The allocator is injected by the
-    /// owning `Entities` container rather than owned here.
-    pub fn ensureTotalCapacity(self: *Self, allocator: std.mem.Allocator, capacity: usize) !void {
-        try self.objDetails.ensureTotalCapacity(allocator, capacity);
-    }
-
-    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        self.objDetails.deinit(allocator);
-    }
-};
-
-// Pool of free entity indexes(ids)
-pub const Registry = struct {
-    const Self = @This();
-    freeEntities: []EntityID,
-    count: u32,
-
-    pub fn init(allocator: std.mem.Allocator, capacity: u32) !Self {
-        return .{
-            .freeEntities = try allocator.alloc(EntityID, capacity),
-            .count = 0,
-        };
-    }
-
-    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        allocator.free(self.freeEntities);
-        self.* = undefined;
-    }
-};
+pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+    self.objectTags.deinit(allocator);
+    self.assetTags.deinit(allocator);
+}

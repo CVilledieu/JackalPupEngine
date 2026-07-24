@@ -6,69 +6,37 @@
 
 // Imports
 const std = @import("std");
-const Types = @import("config").ECS;
 
-//Import component containers
+//Import components
+const Types = @import("config").ECS;
 const Attributes = @import("attributes.zig");
 const Kinematics = @import("kinematics.zig");
 
 // Unpacking / aliasing imported types
 const EntityID = Types.EntityID;
-const Mat4 = Types.Mat4;
-
-//Unpack components
-const Tags = Attributes.Tags;
-const Registry = Attributes.Registry;
-
+const RenderObject = Types.RenderObject;
+const Transforms = Kinematics.Transforms;
 const Motion = Kinematics.Motion;
-const Transform = Kinematics.Transform;
 
-//Dense arrays prepared to be sent to renderer
-const RenderObject = struct {
-    transforms: Mat4,
-    entity: EntityID,
-};
+var malloc: std.mem.Allocator = .{};
 
-//Core struct
-pub const Entities = struct {
-    const Self = @This();
+//Entity ID stack
+var freeEntityIDs: std.ArrayList(EntityID) = .empty;
+var entityCount: u32 = 0;
 
-    malloc: std.mem.Allocator,
+//Rendering formatted entities
+var renderObjects: std.MultiArrayList(RenderObject) = .{};
 
-    registry: Registry,
-    renderObjects: std.MultiArrayList(RenderObject) = .{},
+//Components
+var physics: std.MultiArrayList(Kinematics) = .{};
+var attributes: std.MultiArrayList(Attributes) = .{};
 
-    //Physics
-    motion: std.MultiArrayList(Motion) = .{},
-    transforms: std.MultiArrayList(Transform) = .{},
+pub fn init(allocator: std.mem.Allocator, capacity: u32) !void {
+    malloc = allocator;
 
-    pub fn init(allocator: std.mem.Allocator, capacity: u32) !Self {
-        var self: Self = .{
-            .malloc = allocator,
-            .registry = try Registry.init(allocator, capacity),
-        };
-
-        // If any reservation below fails, tear the whole thing back down.
-        errdefer self.deinit();
-
-        try self.active.ensureTotalCapacity(allocator, capacity);
-        try self.motion.ensureTotalCapacity(allocator, capacity);
-        try self.transforms.ensureTotalCapacity(allocator, capacity);
-        try self.attributes.ensureTotalCapacity(allocator, capacity);
-
-        return self;
+    for (0..capacity) |i| {
+        freeEntityIDs.append(malloc, @intCast(i));
     }
+}
 
-    pub fn deinit(self: *Self) void {
-        self.active.deinit(self.malloc);
-        self.motion.deinit(self.malloc);
-        self.transforms.deinit(self.malloc);
-        self.attributes.deinit(self.malloc);
-        self.registry.deinit(self.malloc);
-        self.* = undefined;
-    }
-
-    pub fn SpawnEntities(self: *Self) void {
-        _ = self;
-    }
-};
+pub fn deinit() void {}
