@@ -9,26 +9,27 @@ const Types = @import("config").ECS;
 
 // Unpack / Alias imported types
 const AssetID = Types.AssetID;
-const Self = @This();
 
-// Data related to rendering
+// Rendering Object data
 const ObjectTags = struct {
     mesh: u32,
     material: u32,
-    id: u32,
+    id: u32, //Index within Rendering Objects array. 0 = not in Rendering Objects
 };
 
-// Static pre runtime time data
 const AssetTags = struct {
-    id: AssetID,
+    id: AssetID, // Static pre runtime time data
 };
 
-var objectTags: std.ArrayList(ObjectTags) = .empty;
-var assetTags: std.ArrayList(AssetTags) = .empty;
+var objectTags = std.ArrayList(ObjectTags).empty;
+var assetTags = std.ArrayList(AssetTags).empty;
 
-pub fn init(allocator: std.mem.Allocator) !void {}
+pub fn init(allocator: std.mem.Allocator, capacity: usize) !void {
+    try objectTags.ensureTotalCapacity(allocator, capacity);
+    try assetTags.ensureTotalCapacity(allocator, capacity);
+}
 
-pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-    self.objectTags.deinit(allocator);
-    self.assetTags.deinit(allocator);
+pub fn deinit(allocator: std.mem.Allocator) void {
+    objectTags.deinit(allocator);
+    assetTags.deinit(allocator);
 }

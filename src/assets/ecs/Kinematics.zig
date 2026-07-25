@@ -19,11 +19,14 @@ const Motion = struct {
     velocity: Vec3,
 };
 
-var transforms = std.MultiArrayList(Transforms);
-var motion = std.MultiArrayList(Motion); //Multi array list, because I plan to expand the structs fields
+var transforms = std.MultiArrayList(Transforms).empty;
+var motion = std.MultiArrayList(Motion).empty; //Multi array list, because I plan to expand the structs fields
 
 pub fn init(allocator: std.mem.Allocator, capacity: usize) !void {
     try transforms.ensureTotalCapacity(allocator, capacity);
     try motion.ensureTotalCapacity(allocator, capacity);
 }
-pub fn deinit(allocator: std.mem.Allocator) void {}
+pub fn deinit(allocator: std.mem.Allocator) void {
+    transforms.deinit(allocator);
+    motion.deinit(allocator);
+}
