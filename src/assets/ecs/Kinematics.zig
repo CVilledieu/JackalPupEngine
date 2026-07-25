@@ -19,14 +19,19 @@ const Motion = struct {
     velocity: Vec3,
 };
 
-var transforms = std.MultiArrayList(Transforms).empty;
-var motion = std.MultiArrayList(Motion).empty; //Multi array list, because I plan to expand the structs fields
+pub const Kinematics = struct {
+    transforms: std.MultiArrayList(Transforms) = .empty,
+    motion: std.MultiArrayList(Motion) = .empty,
 
-pub fn init(allocator: std.mem.Allocator, capacity: usize) !void {
-    try transforms.ensureTotalCapacity(allocator, capacity);
-    try motion.ensureTotalCapacity(allocator, capacity);
-}
-pub fn deinit(allocator: std.mem.Allocator) void {
-    transforms.deinit(allocator);
-    motion.deinit(allocator);
-}
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !Kinematics {
+        return .{
+            .transforms.ensureTotalCapacity(allocator, capacity),
+            .motion.ensureTotalCapacity(allocator, capacity),
+        };
+    }
+
+    pub fn deinit(self: *Kinematics, allocator: std.mem.Allocator) void {
+        self.transforms.deinit(allocator);
+        self.motion.deinit(allocator);
+    }
+};
