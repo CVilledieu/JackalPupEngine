@@ -25,7 +25,7 @@ var entityCount: u32 = 0;
 //Rendering formatted entities
 var renderObjects: std.MultiArrayList(RenderObject) = .{};
 
-pub fn init(allocator: std.mem.Allocator, capacity: u32) !void {
+pub fn init {
     malloc = allocator;
 
     for (0..capacity) |i| {
@@ -34,3 +34,16 @@ pub fn init(allocator: std.mem.Allocator, capacity: u32) !void {
 }
 
 pub fn deinit() void {}
+
+const Manager = struct {
+    openIDs: std.ArrayList(EntityID) = .empty,
+    entityCount: u32,
+};
+
+pub const Entities = struct {
+    malloc: std.mem.Allocator = .{},
+    manager: Manager,
+    renderObjects: std.MultiArrayList(RenderObject) = .{},
+
+    pub fn init(allocator: std.mem.Allocator, capacity: u32) !void{}
+};

@@ -1,5 +1,6 @@
-//! Contains or handles the less dynamic entity data.
-//! Things that dont interact with the physics system
+//! Attribute system
+//! Contains the less mutated data within the entity system
+//! Storing the data in categories (or AoS)
 
 //External Imports
 const std = @import("std");
@@ -11,25 +12,36 @@ const Types = @import("config").ECS;
 const AssetID = Types.AssetID;
 
 // Rendering Object data
-const ObjectTags = struct {
+const ObjectDetails = struct {
     mesh: u32,
     material: u32,
     id: u32, //Index within Rendering Objects array. 0 = not in Rendering Objects
 };
 
-const AssetTags = struct {
+const AssetDetails = struct {
     id: AssetID, // Static pre runtime time data
 };
 
-var objectTags = std.ArrayList(ObjectTags).empty;
-var assetTags = std.ArrayList(AssetTags).empty;
+pub const Attributes = struct {
+    objectList: std.ArrayList(ObjectDetails) = .empty,
+    assetList: std.ArrayList(AssetDetails) = .empty,
 
-pub fn init(allocator: std.mem.Allocator, capacity: usize) !void {
-    try objectTags.ensureTotalCapacity(allocator, capacity);
-    try assetTags.ensureTotalCapacity(allocator, capacity);
-}
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
+        var self: @This() = .{};
+        try self.objectList.ensureTotalCapacity(allocator, capacity);
+        try self.assetList.ensureTotalCapacity(allocator, capacity);
+        return self;
+    }
 
-pub fn deinit(allocator: std.mem.Allocator) void {
-    objectTags.deinit(allocator);
-    assetTags.deinit(allocator);
-}
+    pub fn deinit(self: *Attributes, allocator: std.mem.Allocator) void {
+        self.assetList.deinit(allocator);
+        self.objectList.deinit(allocator);
+    }
+
+    pub fn register(self: *Attributes, allocator: std.mem.Allocator, mesh: u32, material: u32, assetID: AssetID) !void {
+        try self.assetList.append(allocator, .{ .id = assetID });
+        try self.objectList.append(allocator, .{ .mesh = mesh, .material = material, .id = 0 });
+    }
+
+    pub fn spawn(self: *Attributes, mesh: *u32, material: *u32, id: u32) !void {}
+};
