@@ -16,34 +16,33 @@ const Kinematics = @import("kinematics.zig");
 const EntityID = Types.EntityID;
 const RenderObject: type = Types.RenderObject;
 
-var malloc: std.mem.Allocator = .{};
-
-//Entity ID stack
-var freeEntityIDs: std.ArrayList(EntityID) = .empty;
-var entityCount: u32 = 0;
-
-//Rendering formatted entities
-var renderObjects: std.MultiArrayList(RenderObject) = .{};
-
-pub fn init {
-    malloc = allocator;
-
-    for (0..capacity) |i| {
-        freeEntityIDs.append(malloc, @intCast(i));
-    }
-}
-
-pub fn deinit() void {}
-
-const Manager = struct {
-    openIDs: std.ArrayList(EntityID) = .empty,
-    entityCount: u32,
-};
-
 pub const Entities = struct {
     malloc: std.mem.Allocator = .{},
-    manager: Manager,
-    renderObjects: std.MultiArrayList(RenderObject) = .{},
 
-    pub fn init(allocator: std.mem.Allocator, capacity: u32) !void{}
+    freeIDs: std.ArrayList(EntityID) = .empty,
+    count: u32,
+
+    //Components
+    renderObjects: std.MultiArrayList(RenderObject) = .{},
+    kinematics: Kinematics,
+    attributes: Attributes,
+
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
+        var self: @This() = .{ .count = 0 };
+        try self.freeIDs.ensureTotalCapacity(allocator, capacity);
+
+        for (0..capacity) |i| {
+            try self.freeIDs.append(allocator, @intCast(i));
+        }
+
+        //Init components
+        try self.kinematics.init(allocator, capacity);
+        try self.attributes.init(allocator, capacity);
+
+        return self;
+    }
+
+    pub fn deinit(self: *Entities, allocator: std.mem.Allocator) void {
+        self.freeIDs.deinit(allocator);
+    }
 };
