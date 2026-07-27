@@ -16,23 +16,46 @@ const Kinematics = @import("kinematics.zig");
 const EntityID = Types.EntityID;
 const RenderObject: type = Types.RenderObject;
 
-pub const Components = struct {
 
-};
 
-pub const Entities = struct {
-    sparseSet: std.ArrayList(EntityID) = .empty,
+
+pub const SparseSet = struct {
+    denseIDs: std.ArrayList(EntityID) = .empty,
+    openIndices: std.ArrayList(EntityID) = .empty,
     count: u32,
 
-    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This(){}
+
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !Entities{
+        var sparse: std.ArrayList(u32) = .empty;
+        var free: std.ArrayList(u32) = .empty;
+
+        try sparse.ensureTotalCapacity(allocator, capacity);
+        try free.ensureTotalCapacity(allocator, capacity);
+
+        for(capacity..0) |i|{
+            try free.append(allocator, @intCast(i));
+        }
+
+        return .{
+            .count = 0,
+            .free = free,
+            .sparseSet = sparse,
+        };
+    }
+
+
+    pub fn deinit(self: *Entities, allocator: std.mem.Allocator) void{
+        self.free.deinit(allocator);
+        self.sparseSet.deinit(allocator);
+    }
 
 };
 
-pub const EntitiesV1 = struct {
+
+pub const ECS = struct {
     malloc: std.mem.Allocator = .{},
 
-    freeIDs: std.ArrayList(EntityID) = .empty,
-    count: u32,
+    entities: Entities,
 
     //Components
     renderObjects: std.MultiArrayList(RenderObject) = .{},
@@ -40,19 +63,14 @@ pub const EntitiesV1 = struct {
     attributes: Attributes,
 
     pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
+        var entities = try Entities.init(allocator, capacity);
+        errdefer entities.deinit(allocator);
+
         var attributes = try Attributes.init(allocator, capacity);
         errdefer attributes.deinit(allocator);
 
         var kinematics = try Kinematics.init(allocator, capacity);
         errdefer kinematics.deinit(allocator);
-
-        var freeIDs: std.ArrayList(EntityID) = .empty;
-        errdefer freeIDs.deinit(allocator);
-        try freeIDs.ensureTotalCapacity(allocator, capacity);
-
-        for (0..capacity) |i| {
-            freeIDs.appendAssumeCapacity(@intCast(i));
-        }
 
         return .{
             .malloc = allocator,
