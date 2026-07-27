@@ -16,7 +16,19 @@ const Kinematics = @import("kinematics.zig");
 const EntityID = Types.EntityID;
 const RenderObject: type = Types.RenderObject;
 
+pub const Components = struct {
+
+};
+
 pub const Entities = struct {
+    sparseSet: std.ArrayList(EntityID) = .empty,
+    count: u32,
+
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This(){}
+
+};
+
+pub const EntitiesV1 = struct {
     malloc: std.mem.Allocator = .{},
 
     freeIDs: std.ArrayList(EntityID) = .empty,
@@ -60,7 +72,7 @@ pub const Entities = struct {
 
     //Add new entities to ECS
     pub fn add(self: *Entities, dest: *[]EntityID) !void {
-        self.freeIDs.ensureUnusedCapacity(allocator, additional_count: usize)
+        self.
     }
 
     //Remove entities from ECS
