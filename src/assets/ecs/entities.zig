@@ -28,21 +28,47 @@ pub const Entities = struct {
     attributes: Attributes,
 
     pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
-        var self: @This() = .{ .count = 0 };
-        try self.freeIDs.ensureTotalCapacity(allocator, capacity);
+        var attributes = try Attributes.init(allocator, capacity);
+        errdefer attributes.deinit(allocator);
+
+        var kinematics = try Kinematics.init(allocator, capacity);
+        errdefer kinematics.deinit(allocator);
+
+        var freeIDs: std.ArrayList(EntityID) = .empty;
+        errdefer freeIDs.deinit(allocator);
+        try freeIDs.ensureTotalCapacity(allocator, capacity);
 
         for (0..capacity) |i| {
-            try self.freeIDs.append(allocator, @intCast(i));
+            freeIDs.appendAssumeCapacity(@intCast(i));
         }
 
-        //Init components
-        try self.kinematics.init(allocator, capacity);
-        try self.attributes.init(allocator, capacity);
-
-        return self;
+        return .{
+            .malloc = allocator,
+            .freeIDs = freeIDs,
+            .count = 0,
+            .attributes = attributes,
+            .kinematics = kinematics,
+        };
     }
 
     pub fn deinit(self: *Entities, allocator: std.mem.Allocator) void {
+        self.renderObjects.deinit(allocator);
+        self.kinematics.deinit(allocator);
+        self.attributes.deinit(allocator);
         self.freeIDs.deinit(allocator);
     }
+
+    //Add new entities to ECS
+    pub fn add(self: *Entities, dest: *[]EntityID) !void {
+        self.freeIDs.ensureUnusedCapacity(allocator, additional_count: usize)
+    }
+
+    //Remove entities from ECS
+    pub fn remove(self: *Entities, item: EntityID) void {}
+
+    //Add already registered entity to rendering list
+    pub fn spawn(self: *Entities, items: []const EntityID) void {}
+
+    //Remove already registered entity from rendering list
+    pub fn despawn(self: *Entities, items: []const EntityID) void {}
 };

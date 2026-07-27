@@ -26,7 +26,8 @@ pub const Attributes = struct {
     objectList: std.ArrayList(ObjectDetails) = .empty,
     assetList: std.ArrayList(AssetDetails) = .empty,
 
-    pub fn init(self: *Attributes, allocator: std.mem.Allocator, capacity: usize) !void {
+    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
+        var self: @This() = .{};
         try self.objectList.ensureTotalCapacity(allocator, capacity);
         try self.assetList.ensureTotalCapacity(allocator, capacity);
         return self;
