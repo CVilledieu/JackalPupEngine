@@ -1,8 +1,5 @@
 //! Main entry point for the Entity component system
-//! Called by Scene
 //!
-//! MODULE NOTES: (To help clarify comments)
-//!     Arrays labeled with a comment of 'Entity Component' are sparse arrays where Component[EntityID] = ComponentType;
 
 // Imports
 const std = @import("std");
@@ -18,47 +15,97 @@ const RenderObject: type = Types.RenderObject;
 
 
 
+// Stack data struct allocating position within dense component arrays
+const Entities = struct {
+    //Stores ObjectID by EntityID  //sparse[EntityID] = ObjectID;
+    sparse: std.ArrayList(EntityID) = .empty,
 
-pub const SparseSet = struct {
-    denseIDs: std.ArrayList(EntityID) = .empty,
-    openIndices: std.ArrayList(EntityID) = .empty,
-    count: u32,
+    //Stores EntityIDs by ObjectID  //dense[ObjectID] = EntityID;
+    dense: std.ArrayList(EntityID) = .empty,
+    
+    //List of entities that were freed and can be reused
+    recycled: std.ArrayList(EntityID) = .empty,
+    next: EntityID = 0,
+
+    fn init(allocator: std.mem.Allocator, capacity: usize) !Entities{
+        var self: Entities = .{};
+        errdefer(self.deinit(allocator));
+
+        try self.sparse.ensureTotalCapacity(allocator, capacity);
+        try self.dense.ensureTotalCapacity(allocator, capacity);
+        try self.recycled.ensureTotalCapacity(allocator, capacity);
+
+        return self;
+    }
 
 
-    pub fn init(allocator: std.mem.Allocator, capacity: usize) !Entities{
-        var sparse: std.ArrayList(u32) = .empty;
-        var free: std.ArrayList(u32) = .empty;
+    fn deinit(self: *Entities, allocator: std.mem.Allocator) void{
+        self.sparse.deinit(allocator);
+        self.dense.deinit(allocator);
+        self.recycled.deinit(allocator);
+    }
 
-        try sparse.ensureTotalCapacity(allocator, capacity);
-        try free.ensureTotalCapacity(allocator, capacity);
+    fn liveCount(self: *const Entities) u32{
+        return @intCast(self.dense.items.len);
+    }
 
-        for(capacity..0) |i|{
-            try free.append(allocator, @intCast(i));
-        }
+    fn contains(self: *const Entities, id: EntityID) bool {
+        if (id >= self.sparse.items.len) return false;
+        const i = self.sparse.items[id];
+        return i < self.dense.items.len and self.dense.items[i] == id;
+    }
 
-        return .{
-            .count = 0,
-            .free = free,
-            .sparseSet = sparse,
+    fn slot(self: *const Entities, id: EntityID) ?EntityID {
+        if (!self.contains(id)) return null;
+        return self.sparse.items[id];
+    }
+
+
+    fn add(self: *Entities, allocator: std.mem.Allocator) !EntityID {
+        const id = self.free.pop() orelse blk: {
+            const fresh = self.next;
+            self.next += 1;
+            break :blk fresh;
         };
+
+        const dense_index: EntityID = @intCast(self.dense.items.len);
+        try self.dense.append(allocator, id);
+
+        // Ensure sparse is large enough to index `id`, then map it.
+        if (id >= self.sparse.items.len) {
+            try self.sparse.resize(allocator, id + 1);
+        }
+        self.sparse.items[id] = dense_index;
+
+        return id;
     }
 
+    fn remove(self: *Entities, allocator: std.mem.Allocator, id: EntityID) !?EntityID {
+        if (!self.contains(id)) return null;
 
-    pub fn deinit(self: *Entities, allocator: std.mem.Allocator) void{
-        self.free.deinit(allocator);
-        self.sparseSet.deinit(allocator);
+        const i = self.sparse.items[id];
+        const moved_id = self.dense.items[self.dense.items.len - 1];
+
+        // Move the last live entity into the hole, fix its sparse mapping.
+        self.dense.items[i] = moved_id;
+        self.sparse.items[moved_id] = i;
+        _ = self.dense.pop();
+
+        try self.free.append(allocator, id); // recycle
+        return i;
     }
+};
+
+    
 
 };
 
 
 pub const ECS = struct {
     malloc: std.mem.Allocator = .{},
-
     entities: Entities,
 
     //Components
-    renderObjects: std.MultiArrayList(RenderObject) = .{},
     kinematics: Kinematics,
     attributes: Attributes,
 
@@ -74,31 +121,29 @@ pub const ECS = struct {
 
         return .{
             .malloc = allocator,
-            .freeIDs = freeIDs,
-            .count = 0,
+            .entities = entities,
             .attributes = attributes,
             .kinematics = kinematics,
         };
     }
 
-    pub fn deinit(self: *Entities, allocator: std.mem.Allocator) void {
-        self.renderObjects.deinit(allocator);
+    pub fn deinit(self: *ECS, allocator: std.mem.Allocator) void {
         self.kinematics.deinit(allocator);
         self.attributes.deinit(allocator);
-        self.freeIDs.deinit(allocator);
+        self.entities.deinit(allocator);
     }
 
     //Add new entities to ECS
-    pub fn add(self: *Entities, dest: *[]EntityID) !void {
+    pub fn add(self: *ECS, dest: *[]EntityID) !void {
         self.
     }
 
     //Remove entities from ECS
-    pub fn remove(self: *Entities, item: EntityID) void {}
+    pub fn remove(self: *ECS, item: EntityID) void {}
 
     //Add already registered entity to rendering list
-    pub fn spawn(self: *Entities, items: []const EntityID) void {}
+    pub fn spawn(self: *ECS, items: []const EntityID) void {}
 
     //Remove already registered entity from rendering list
-    pub fn despawn(self: *Entities, items: []const EntityID) void {}
+    pub fn despawn(self: *ECS, items: []const EntityID) void {}
 };
