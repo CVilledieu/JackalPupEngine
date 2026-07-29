@@ -13,8 +13,6 @@ const Kinematics = @import("kinematics.zig");
 const EntityID = Types.EntityID;
 const RenderObject: type = Types.RenderObject;
 
-
-
 // Stack data struct allocating position within dense component arrays
 const Entities = struct {
     //Stores ObjectID by EntityID  //sparse[EntityID] = ObjectID;
@@ -22,14 +20,14 @@ const Entities = struct {
 
     //Stores EntityIDs by ObjectID  //dense[ObjectID] = EntityID;
     dense: std.ArrayList(EntityID) = .empty,
-    
+
     //List of entities that were freed and can be reused
     recycled: std.ArrayList(EntityID) = .empty,
     next: EntityID = 0,
 
-    fn init(allocator: std.mem.Allocator, capacity: usize) !Entities{
+    fn init(allocator: std.mem.Allocator, capacity: usize) !Entities {
         var self: Entities = .{};
-        errdefer(self.deinit(allocator));
+        errdefer (self.deinit(allocator));
 
         try self.sparse.ensureTotalCapacity(allocator, capacity);
         try self.dense.ensureTotalCapacity(allocator, capacity);
@@ -38,14 +36,13 @@ const Entities = struct {
         return self;
     }
 
-
-    fn deinit(self: *Entities, allocator: std.mem.Allocator) void{
+    fn deinit(self: *Entities, allocator: std.mem.Allocator) void {
         self.sparse.deinit(allocator);
         self.dense.deinit(allocator);
         self.recycled.deinit(allocator);
     }
 
-    fn liveCount(self: *const Entities) u32{
+    fn liveCount(self: *const Entities) u32 {
         return @intCast(self.dense.items.len);
     }
 
@@ -59,7 +56,6 @@ const Entities = struct {
         if (!self.contains(id)) return null;
         return self.sparse.items[id];
     }
-
 
     fn add(self: *Entities, allocator: std.mem.Allocator) !EntityID {
         const id = self.free.pop() orelse blk: {
@@ -94,56 +90,4 @@ const Entities = struct {
         try self.free.append(allocator, id); // recycle
         return i;
     }
-};
-
-    
-
-};
-
-
-pub const ECS = struct {
-    malloc: std.mem.Allocator = .{},
-    entities: Entities,
-
-    //Components
-    kinematics: Kinematics,
-    attributes: Attributes,
-
-    pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
-        var entities = try Entities.init(allocator, capacity);
-        errdefer entities.deinit(allocator);
-
-        var attributes = try Attributes.init(allocator, capacity);
-        errdefer attributes.deinit(allocator);
-
-        var kinematics = try Kinematics.init(allocator, capacity);
-        errdefer kinematics.deinit(allocator);
-
-        return .{
-            .malloc = allocator,
-            .entities = entities,
-            .attributes = attributes,
-            .kinematics = kinematics,
-        };
-    }
-
-    pub fn deinit(self: *ECS, allocator: std.mem.Allocator) void {
-        self.kinematics.deinit(allocator);
-        self.attributes.deinit(allocator);
-        self.entities.deinit(allocator);
-    }
-
-    //Add new entities to ECS
-    pub fn add(self: *ECS, dest: *[]EntityID) !void {
-        self.
-    }
-
-    //Remove entities from ECS
-    pub fn remove(self: *ECS, item: EntityID) void {}
-
-    //Add already registered entity to rendering list
-    pub fn spawn(self: *ECS, items: []const EntityID) void {}
-
-    //Remove already registered entity from rendering list
-    pub fn despawn(self: *ECS, items: []const EntityID) void {}
 };
