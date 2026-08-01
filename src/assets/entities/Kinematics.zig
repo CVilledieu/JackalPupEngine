@@ -21,26 +21,11 @@ pub const Motion = struct {
 };
 
 pub const Kinematics = struct {
-    allocator: std.mem.Allocator = .{},
-
-    sparseSet: std.ArrayList(EntityID) = .empty, //Stores ObjectID by EntityID  //sparse[EntityID] = ObjectID;
-    denseSet: std.ArrayList(EntityID) = .empty, //Stores EntityIDs by ObjectID  //dense[ObjectID] = EntityID;
-    recycled: std.ArrayList(EntityID) = .empty, //List of entities that were freed and can be reused
-    next: EntityID = 0, //
-
     transforms: std.MultiArrayList(Transforms) = .empty,
     motion: std.MultiArrayList(Motion) = .empty,
 
     pub fn init(allocator: std.mem.Allocator, capacity: usize) !@This() {
-        var self: @This() = .{
-            .allocator = allocator,
-            .next = 0,
-        };
-
-        try self.sparseSet.ensureTotalCapacity(allocator, capacity);
-        try self.denseSet.ensureTotalCapacity(allocator, capacity);
-        try self.recycled.ensureTotalCapacity(allocator, capacity);
-
+        var self: @This() = .{};
         try self.transforms.ensureTotalCapacity(allocator, capacity);
         try self.motion.ensureTotalCapacity(allocator, capacity);
 
