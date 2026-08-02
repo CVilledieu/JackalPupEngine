@@ -11,7 +11,6 @@ const Kinematics = @import("kinematics.zig");
 
 // Unpacking / aliasing imported types
 const EntityID = Types.EntityID;
-const RenderObject: type = Types.RenderObject;
 
 // Stack data struct allocating position within dense component arrays
 const Entities = struct {
@@ -91,3 +90,46 @@ const Entities = struct {
         return i;
     }
 };
+
+fn Pool(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        sparse: std.ArrayList(EntityID) = .empty, // entity -> index in dense
+        owners: std.ArrayList(EntityID) = .empty, // dense index -> entity (packed)
+        data: std.ArrayList(T) = .empty, // dense index -> value  (packed)
+
+        fn contains(self: *const Self, e: EntityID) bool {
+            if (e >= self.sparse.items.len) return false;
+            const i = self.sparse.items[e];
+            return i < self.owners.items.len and self.owners.items[i] == e;
+        }
+
+        fn get(self: *Self, e: EntityID) ?*T {
+            if (!self.contains(e)) return null;
+            return &self.data.items[self.sparse.items[e]];
+        }
+
+        fn add(self: *Self, a: std.mem.Allocator, e: EntityID, value: T) !void {
+            if (self.contains(e)) {
+                self.data.items[self.sparse.items[e]] = value;
+                return;
+            }
+            const i: EntityID = @intCast(self.owners.items.len);
+            try self.owners.append(a, e);
+            try self.data.append(a, value);
+            if (e >= self.sparse.items.len) try self.sparse.resize(a, e + 1);
+            self.sparse.items[e] = i;
+        }
+
+        fn remove(self: *Self, e: EntityID) void {
+            if (!self.contains(e)) return;
+            const i = self.sparse.items[e];
+            const last = self.owners.items[self.owners.items.len - 1];
+            self.owners.items[i] = last; // swap-remove owner
+            self.data.items[i] = self.data.items[self.data.items.len - 1];
+            self.sparse.items[last] = i; // fix moved owner's mapping
+            _ = self.owners.pop();
+            _ = self.data.pop();
+        }
+    };
+}
